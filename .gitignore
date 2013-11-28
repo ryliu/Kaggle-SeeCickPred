@@ -1,0 +1,77 @@
+#1#Set up and import the data
+setwd("C:/Users/Richard Liu/Dropbox/#Tools/data/Kaggle2")
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+submission <- read.csv("sampleSubmission.csv")
+
+#2#Data explore
+#Summary the objective
+summary(train)
+summary(train$num_votes)
+summary(train$num_comments)
+summary(train$num_views)
+
+plot(train$num_votes)
+
+#Data clean
+
+
+#3#Add features
+#3.1#Handle the location data
+
+#3.2#Handle the source data
+train$source.num <- ifelse(train$source == "android", 1, train$source)
+train$source.num[is.na(train$source.num)] <- 0
+test$source.num <- ifelse(test$source == "android", 1, test$source)
+test$source.num[is.na(test$source.num)] <- 0
+
+#3.3#Handle the t
+#I need to cauculate: for each different type, how many has 1 votes, and how many has more that 1 votes.
+#This number could be a indicate that for which type of tag, will have more votes, comments and views)
+N1 <- 1
+N2 <- 2
+N5 <- 5
+N10 <- 10 
+tag.type.votes<- ddply(train, .(tag_type),summarise, 
+                       tag.votes.mean = round(mean(num_votes)),
+                       tag.votes.once = sum(table(num_votes) == 1),
+                       tag.votes.n1.times = sum(table(num_votes) > N1),
+                       tag.votes.n2.times = sum(table(num_votes) > N2),
+                       tag.votes.n5.times = sum(table(num_votes) > N5),
+                       tag.votes.n10.times = sum(table(num_votes) > N10))
+tag.type.votes.nrow <- ddply(train, .(tag_type), nrow)
+tag.type.votes$nrow <- tag.type.votes.nrow$V1
+
+tag.type.comments<- ddply(train, .(tag_type), summarise, 
+                          tag.comments.mean = round(mean(num_comments)),
+                          tag.comments.once = sum(table(num_comments) == 1),
+                          tag.comments.n1.times = sum(table(num_comments) > N1),
+                          tag.comments.n2.times = sum(table(num_comments) > N2),
+                          tag.comments.n5.times = sum(table(num_comments) > N5),
+                          tag.comments.n10.times = sum(table(num_comments) > N10))
+tag.type.comments.nrow <- ddply(train, .(tag_type), nrow)
+tag.type.comments$tag.comments.nrow <- tag.type.comments.nrow$V1
+
+tag.type.views<- ddply(train, .(tag_type), summarise, 
+                       tag.views.mean = round(mean(num_views)),
+                       tag.views.once = sum(table(num_views) == 1),
+                       tag.views.n1.times = sum(table(num_views) > N1),
+                       tag.views.n2.times = sum(table(num_views) > N2),
+                       tag.views.n5.times = sum(table(num_views) > N5),
+                       tag.views.n10.times = sum(table(num_views) > N10))
+tag.type.views.nrow <- ddply(train, .(tag_type), nrow)
+tag.type.views$tag.views.nrow <- tag.type.views.nrow$V1
+
+
+
+####unimportant#################################################
+####trying to plot the mean of each type###################
+tag.type.views.mean<- ddply(train, .(tag_type), summarise, 
+                       mean = round(mean(num_views)))
+plot(mean ~ tag_type, type = "l", data = tag.type.views.mean)
+##############################################################
+
+train2 <- ddply(train, .(id), mutate,
+               tag_type_test = year - min(year) + 1
+)
+      
